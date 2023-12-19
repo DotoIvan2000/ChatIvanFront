@@ -2,6 +2,15 @@
   <div>
     <DHeader :titleHeader="titleHeaderText" />
     <q-table :columns="dataColumns" :rows="teams">
+      <template v-slot:body-cell-logo="{ row }">
+        <q-td :props="props">
+          <img
+            :src="row.logo"
+            alt="Logo"
+            style="max-width: 50px; max-height: 50px"
+          />
+        </q-td>
+      </template>
       <template v-slot:body-cell-actions="{ row }">
         <q-btn
           @click="joinTeam(row.id)"
@@ -130,7 +139,16 @@ export default {
           Authorization: token,
         };
         const response = await api.get(route, { headers });
-        teams.value = response.data.data;
+        teams.value = response.data.data.map((item) => {
+          return {
+            id: item.id,
+            name: item.name,
+            decription: item.description,
+            logo: "http://localhost/storage/" + item.logo,
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+          };
+        });
       } catch (error) {
         console.error("Error al obtener usuarios:", error);
       }

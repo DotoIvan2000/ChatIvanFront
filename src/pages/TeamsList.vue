@@ -33,6 +33,7 @@
             class="col-12 q-mb-md q-ml-md q-mt-md"
           />
           <div>
+            {{ logo }}
             <input
               type="file"
               ref="logoInput"
@@ -78,6 +79,15 @@
       </div>
     </div>
     <q-table :columns="dataColumns" :rows="teams">
+      <template v-slot:body-cell-logo="{ row }">
+        <q-td :props="props">
+          <img
+            :src="row.logo"
+            alt="Logo"
+            style="max-width: 50px; max-height: 50px"
+          />
+        </q-td>
+      </template>
       <template v-slot:body-cell-actions="{ row }">
         <q-btn @click="editTeam(row.id)" color="primary" icon="edit" />
         <q-btn @click="joinTeam(row.id)" color="amber" icon="group_add" />
@@ -170,6 +180,16 @@ export default {
         };
         const response = await api.get(route, { headers });
         teams.value = response.data.data;
+        teams.value = response.data.data.map((item) => {
+          return {
+            id: item.id,
+            name: item.name,
+            decription: item.description,
+            logo: "http://localhost/storage/" + item.logo,
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+          };
+        });
       } catch (error) {
         console.error("Error al obtener usuarios:", error);
       }
@@ -186,18 +206,28 @@ export default {
       const route = "/team/" + authStore.user[0] + "/create";
       try {
         const headers = {
-          "Content-Type": "application/json",
+          "Content-Type": "multipart/form-data",
           Accept: "application/json",
           Authorization: token,
         };
-        const formData = new FormData();
+        let formData = new FormData();
         formData.append("name", name.value);
         formData.append("description", description.value);
-        if (logo.value) {
-          formData.append("logo", logo.value, logo.value.name);
-        }
+        formData.append("logo", logo.value);
         const response = await api.post(route, formData, { headers });
         teams.value = response.data.data;
+        $q.notify({
+          message: "Team creado correctamente",
+          color: "purple",
+        });
+        isCreate.value = !isCreate.value;
+        const route2 = "/admin/" + authStore.user[0] + "/teams";
+        try {
+          const response = await api.get(route2, { headers });
+          teams.value = response.data.data;
+        } catch (error) {
+          console.error("Error al obtener usuarios:", error);
+        }
       } catch (error) {
         console.error("Error al obtener usuarios:", error);
       }
